@@ -25,6 +25,15 @@ function main(): void {
   if (!bytes.subarray(0, 8).equals(PNG_SIGNATURE)) {
     throw new Error("source meme is not a PNG file");
   }
+  if (bytes.length < 1024) {
+    throw new Error(`source meme suspiciously small: ${bytes.length} bytes`);
+  }
+  // PNG IHDR: width at bytes 16-19, height at bytes 20-23 (big-endian).
+  const width = bytes.readUInt32BE(16);
+  const height = bytes.readUInt32BE(20);
+  if (width < 100 || height < 100) {
+    throw new Error(`source meme too small: ${width}x${height}`);
+  }
   mkdirSync(OUT_DIR, { recursive: true });
   copyFileSync(SRC, OUT);
   const outBytes = readFileSync(OUT);
@@ -35,6 +44,7 @@ function main(): void {
   }
   const size = statSync(OUT).size;
   console.log(`meme: ${OUT}`);
+  console.log(`dimensions: ${width}x${height}`);
   console.log(`bytes: ${size}`);
   console.log(`sha256: ${sha256(outBytes)}`);
   console.log(`caption-top: I WAS BUILT TO FOLLOW ORDERS`);
